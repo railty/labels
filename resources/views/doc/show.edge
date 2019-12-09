@@ -1,0 +1,44 @@
+@layout('master')
+
+@section('content')
+  <style>
+    svg {
+      border: solid 1px black;
+    }
+  </style>
+
+  {{{doc.data}}}
+  <button class="button" onclick="saveSource();">Save</button>
+  
+  <textarea id='source' class="textarea" rows="8">{{doc.data}}</textarea>
+  <script>
+    function saveSource(){
+      let data = document.getElementById("source").value;
+      save(data);
+    }
+
+    function save(svg){
+      var http = new XMLHttpRequest();
+      http.open("POST", '/docs', true);
+      http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Accept", "application/json");
+      
+      http.onreadystatechange = function() { //Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+          var rc = JSON.parse(http.responseText);
+          console.log("saved id = " + rc.id);
+          location.reload();
+        }
+      }
+      
+      var data = {
+        'docId': {{doc.id}},
+        '_csrf': '{{ csrfToken }}',
+        'data': svg
+      };
+
+      var params = JSON.stringify(data);
+      http.send(params);
+    }
+  </script>
+@endsection
