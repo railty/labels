@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-  fabric
-}
-from 'fabric';
+//import { fabric } from 'fabric';
 import {
   saveCanvasState,
   initCenteringGuidelines,
@@ -109,6 +106,7 @@ class FabricCanvas extends React.Component {
           lthis.updateState(e);
       },
       'selection:created': (e) => {
+          lthis.props.selectionUpdated();
           lthis.updateState();
           if(e.subTargets) {
               selectObject(lthis.canvas, e.subTargets[0]);
@@ -116,10 +114,12 @@ class FabricCanvas extends React.Component {
           selectObject(lthis.canvas);
       },
       'selection:updated': () => {
+          lthis.props.selectionUpdated();
           lthis.updateState();
           selectObject(lthis.canvas);
       },
       'selection:cleared': () => {
+        lthis.props.selectionUpdated();
           lthis.updateState();
       },
       'selection:added': (e) => {},

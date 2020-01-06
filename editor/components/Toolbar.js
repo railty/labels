@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { fabric } from 'fabric';
+//import { fabric } from 'fabric';
 import { SketchPicker } from 'react-color';
 import FontPicker from 'font-picker-react';
 import Popup from 'reactjs-popup'

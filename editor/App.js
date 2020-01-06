@@ -9,9 +9,11 @@ import FabricCanvas from './components/FabricCanvas';
 import { Row, Col, Container } from "reactstrap";
 import { Tabs, Tab, TabList } from 'react-web-tabs';
 import Toolbar from './components/Toolbar';
+import AttrsTable from './components/AttrsTable';
 import LeftPanel from './components/LeftPanel';
-import Footer from './components/Footer';
-import { fabric } from 'fabric';
+import { initCenteringGuidelines } from './components/Helpers'
+
+//import { fabric } from 'fabric';
 
 import './App.scss';
 import './Styles/Navbar.scss'
@@ -24,20 +26,29 @@ import './Styles/Toolbar.scss'
 class App extends Component {
   constructor(props) {
     super(props);
+    this.oid = 1;
+
     this.state = {
       canvas: null,
       isSnap: false,
       isOverlap: false,
       isGrid: true,
-      sidebarWidth: 367,
       canvaswidth: 1100,
       canvasheight: 450,
       defaultbg: null, //require('./images/main-img.jpg'),
       fontBoldValue: 'normal',
       fontItalicValue: '',
       fontUnderlineValue: '',
-      collapse: true,
-      gridsize: 30
+      gridsize: 30,
+      savestateaction: true,
+      canvasScale: 1,
+      SCALE_FACTOR: 1.2,
+      attrs2: {
+        'rect': ['name', 'left', 'top', 'width', 'height', 'stroke', 'strokeWidth', 'fill'],
+        'text': ['name', 'left', 'top', 'width', 'height', 'backgroundColor', 'text', 'fontFamily', 'fontStyle', 'fontSize', 'fontWeight'],
+      },
+      numberAttrs: ['left', 'top', 'width', 'height', 'strokeWidth', 'fontSize', 'fontWeight'],
+      attrs: []
     };
   }
 
@@ -49,14 +60,6 @@ class App extends Component {
 
   updateState = (stateoptions) => {
     this.setState(stateoptions);
-  }
-
-  toggleSidebar = (type) => {
-    this.setState({ collapse: type });
-
-    this.setState({
-      sidebarWidth: type ? 367 : 0
-    });
   }
 
   downloadAsPNG = () => {
@@ -175,6 +178,18 @@ class App extends Component {
     this.download('/s2p', fileName, canvasData);
   }
 
+  changeCanvas = (name, value) => {
+    var canvas = this.state.canvas
+
+    let object = canvas.getActiveObject();
+
+    if (!object) return;
+
+    object.set(name, value);
+    object.setCoords();
+    canvas.renderAll();
+  }
+
   setSnap = () => {
     this.setState({
       isSnap: !this.state.isSnap,
@@ -228,25 +243,247 @@ class App extends Component {
     }
   }
 
+  undo = () => {
+    var canvas = this.state.canvas;
+    canvas.stateaction = false;
+    var index = canvas.index;
+    var state = canvas.state;
+    if (index > 0) {
+      index -= 1;
+      this.removeObjects();
+      canvas.loadFromJSON(state[index], function() {
+        canvas.renderAll();
+        canvas.stateaction = true;
+        canvas.index = index;
+      });
+    }
+    else {
+      canvas.stateaction = true;
+    }
+  }
+
+  removeObjects = () => {
+    var canvas = this.state.canvas;
+    var activeObject = canvas.getActiveObject();
+    if (!activeObject) return;
+    if (activeObject.type === 'activeSelection') {
+      activeObject.forEachObject((object) => {
+        canvas.remove(object);
+      });
+    }
+    else {
+      canvas.remove(activeObject);
+    }
+  }
+
+  redo = () => {
+    var canvas = this.state.canvas;
+    var index = canvas.index;
+    var state = canvas.state;
+    console.log(index);
+    canvas.stateaction = false;
+    if (index < state.length - 1) {
+      this.removeObjects();
+      canvas.loadFromJSON(state[index + 1], function() {
+        canvas.renderAll();
+        canvas.stateaction = true;
+        index += 1;
+        canvas.index = index;
+      });
+    }
+    else {
+      canvas.stateaction = true;
+    }
+  }
+  
+  zoomToPercent = (event) => {
+    var percentage = Number(event.target.value) / 100;
+    this.setCanvasSize(percentage)
+  }
+
+  setCanvasSize = (percentage) => {
+    console.log(percentage);
+    var canvas = this.state.canvas;
+
+    canvas.setHeight(canvas.getHeight() * (percentage / this.state.canvasScale));
+    canvas.setWidth(canvas.getWidth() * (percentage / this.state.canvasScale));
+    const objects = canvas.getObjects();
+
+    for (var i in objects) {
+      const  scaleX = objects[i].scaleX;
+      const  scaleY = objects[i].scaleY;
+      const  left = objects[i].left;
+      const  top = objects[i].top;
+      const  tempScaleX = scaleX * (percentage / this.state.canvasScale);
+      const  tempScaleY = scaleY * (percentage / this.state.canvasScale);
+      const  tempLeft = left * (percentage / this.state.canvasScale);
+      const  tempTop = top * (percentage / this.state.canvasScale);
+      objects[i].scaleX = tempScaleX;
+      objects[i].scaleY = tempScaleY;
+      objects[i].left = tempLeft;
+      objects[i].top = tempTop;
+      objects[i].setCoords();
+    } 
+    this.setState({ canvasScale: percentage });
+    canvas.renderAll();
+  }
+
+  zoomIn = () => {
+    const canvas = this.state.canvas;
+
+    if (this.state.canvasScale < 4) {
+      const percentage = this.state.canvasScale + 0.25;
+      this.setCanvasSize(percentage);
+      initCenteringGuidelines(canvas);
+    }
+  }
+
+  // Zoom Out
+  zoomOut = () => {
+    const canvas = this.state.canvas;
+    if (this.state.canvasScale > 0.25) {
+      const percentage = this.state.canvasScale - 0.25;
+      this.setCanvasSize(percentage);
+      initCenteringGuidelines(canvas);
+    }
+  }
+
+  resetState = () => {
+    var canvas = this.state.canvas;
+    canvas.state = [];
+    canvas.index = 0;
+  }
+
+  grpungrpItems() {
+    var canvas = this.state.canvas;
+    var actObj = canvas.getActiveObject();
+    if (!actObj) {
+      return false;
+    }
+    if (actObj.type === 'group') {
+      actObj.toActiveSelection();
+    } else if (actObj.type === 'activeSelection') {
+      actObj.toGroup();
+    }
+    canvas.renderAll();
+  }
+
+  initKeyboardEvents = () => {
+    let self = this;
+    document.onkeyup = function(e) {
+      e.preventDefault(); // Let's stop this event.
+      e.stopPropagation(); // Really this time.
+      if (e.which === 46) {
+        self.removeObject();
+      }
+      if (e.ctrlKey && e.which === 90) {
+        self.undo();
+      }
+      if (e.ctrlKey && e.which === 89) {
+        self.redo();
+      }
+      if (e.which === 71) {
+        //group / ungroup items
+        self.grpungrpItems();
+      }
+    };
+  }
+
+  componentDidMount() {
+    this.initKeyboardEvents();
+  }
+
+  selectionUpdated = () => {
+    console.log("selection updated");
+
+    let canvas = this.state.canvas;
+    let actObj = canvas.getActiveObject();
+    if (actObj) {
+      if (actObj.type == "text"){
+        this.oid++;
+        let attrs = [
+          {
+            name: "name", 
+            type: "keyin"
+          }, 
+          {
+            name: "fontSize", 
+            type: "keyin"
+          }, 
+          {
+            name: "fontFamily", 
+            type: "list",
+            list: []
+          },
+        ].map((attr)=>{
+          let v = actObj.get(attr.name);
+          attr["value"] = v;
+          return attr;
+        });
+
+        if (JSON.stringify(this.state.attrs) != JSON.stringify(attrs)) {
+          this.setState({attrs: attrs});
+        }
+      }
+
+      
+    }
+  }
+
   render() {
-    const { sidebarWidth, collapse } = this.state;
+    const sidebarWidth = 400;
+
+    let options = []
+    for (let i = 1; i < 17; i ++) {
+     options.push(<option key={i} value={i * 25}>{i * 25}%</option>)
+    }
 
     return (
       <Container fluid={true}>
         <Row className="navbar-container">
-          <Col>
-            <nav className="navbar navbar-expand-lg header-bar">
-              <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="{null}bs-example-navbar-collapse-1">
-                <span className="navbar-toggler-icon"></span>
-              </button>
-              <a className="navbar-brand" href="/"><img src={require('./images/logo.jpg')} alt="" /></a>
-              <div className="left-link"><span className="nav-link brand">Artwork Editor</span></div>
-            </nav>
-          </Col>
           <Col>          
             <nav className="navbar navbar-expand-lg header-bar">
               <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul className="navbar-nav ml-md-auto">
+  
+                  <li className="nav-item active">
+                    <span className="btn btn-outline" onClick={this.zoomOut}>-</span>
+                  </li>                    
+
+                  <li className="nav-item active">
+                    <div className="select-container">
+                      <select className="zoom" onChange={this.zoomToPercent} value={this.state.canvasScale * 100}>
+                        {options}
+                        <option value="100">FIT</option>
+                        <option value="200">FILL</option>
+                      </select>
+                    </div>
+                  </li>
+                  <li className="nav-item active">
+                    <span className="btn btn-outline" onClick={this.zoomIn}>+</span>
+                  </li>                    
+
+                  <li className="nav-item active">
+                    <span className="btn btn-outline" onClick={this.undo}>Undo</span>
+                  </li>
+                  <li className="nav-item active">
+                    <span className="btn btn-outline" onClick={this.redo}>Redo</span>
+                  </li>
+                  <li className="nav-item">
+                    <a className="nav-link switch" href="{null}" title="Display Grid">Grid <input type="checkbox" id="gridswitch" />
+                    <label htmlFor="gridswitch" onClick={this.showhideGrid}>Toggle</label>
+                    </a>
+                  </li>
+                  <li className="nav-item">
+                    <a className="nav-link switch" href="{null}" title="Snap to Grid">Snap <input type="checkbox" id="snapswitch" />
+                    <label htmlFor="snapswitch" onClick={this.setSnap}>Toggle</label>
+                    </a>
+                  </li>
+                  <li className="nav-item">
+                    <a className="nav-link switch" href="{null}" title="Overlap">Overlap <input type="checkbox" id="overlapswitch" />
+                    <label htmlFor="overlapswitch" onClick={this.setOverlap}>Toggle</label>
+                    </a>
+                  </li>
                   <li className="nav-item active download">
                     <span className="btn btn-outline" onClick={this.downloadAsJSON}>Export JSON</span>
                   </li>
@@ -269,25 +506,25 @@ class App extends Component {
           <div className="tabpanel">
             <Tabs defaultTab="vertical-tab-one" vertical className="vertical-tabs">
               <TabList>
-                <Tab tabFor="vertical-tab-one" className="lasttab" onClick={() => this.toggleSidebar(true)}>
+                <Tab tabFor="vertical-tab-one" className="lasttab" >
                   <div className="edit-box">
                     <img src={require('./images/textbg.jpg')} alt="" />
                     <span>TEXT</span>
                   </div>
                 </Tab>
-                <Tab tabFor="vertical-tab-two" className="lasttab" onClick={() => this.toggleSidebar(true)}>
+                <Tab tabFor="vertical-tab-two" className="lasttab" >
                   <div className="edit-box">
                     <img src={require('./images/bg.jpg')} alt="" />
                     <span>BKGROUND</span>
                   </div>
                 </Tab>
-                <Tab tabFor="vertical-tab-three" className="lasttab" onClick={() => this.toggleSidebar(true)}>
+                <Tab tabFor="vertical-tab-three" className="lasttab" >
                   <div className="edit-box">
                     <img src={require('./images/bg.jpg')} alt="" />
                     <span>PHOTOS</span>
                   </div>
                 </Tab>
-                <Tab tabFor="vertical-tab-four" className="lasttab" onClick={() => this.toggleSidebar(true)}>
+                <Tab tabFor="vertical-tab-four" className="lasttab" >
                   <div className="edit-box">
                     <img src={require('./images/bg.jpg')} alt="" />
                     <span>ELEMENTS</span>
@@ -295,16 +532,7 @@ class App extends Component {
                 </Tab>
               </TabList>
               <div style={{ width: sidebarWidth }} className="left-side-panel">
-                {collapse && (
-                  <LeftPanel canvas={this.state.canvas} />
-                )}
-              </div>
-              <div
-                className="btn-toggle"
-                onClick={() => this.toggleSidebar(false)}
-                style={{ opacity: collapse ? 1 : 0 }}
-              >
-                <img className="arrowimage" src={require('./images/left.png')} alt="" />
+                <LeftPanel canvas={this.state.canvas} />
               </div>
             </Tabs>   
           </div>
@@ -312,28 +540,14 @@ class App extends Component {
           <div className="canvas-panel">
             <Toolbar state={this.state} updateCanvas={this.updateCanvas} />
 
-            <FabricCanvas state={this.state} updateCanvas={this.updateCanvas} updateState={this.updateState} />
-
-            <Footer canvas={this.state.canvas}>
-              <ul className="navbar-nav ml-md-auto">
-                <li className="nav-item">
-                  <a className="nav-link switch" href="{null}" title="Display Grid">Grid <input type="checkbox" id="gridswitch" />
-                  <label htmlFor="gridswitch" onClick={this.showhideGrid}>Toggle</label>
-                  </a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link switch" href="{null}" title="Snap to Grid">Snap <input type="checkbox" id="snapswitch" />
-                  <label htmlFor="snapswitch" onClick={this.setSnap}>Toggle</label>
-                  </a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link switch" href="{null}" title="Overlap">Overlap <input type="checkbox" id="overlapswitch" />
-                  <label htmlFor="overlapswitch" onClick={this.setOverlap}>Toggle</label>
-                  </a>
-                </li>
-              </ul>
-            </Footer>
+            <FabricCanvas state={this.state} updateCanvas={this.updateCanvas} updateState={this.updateState} selectionUpdated={this.selectionUpdated}/>
           </div>
+
+
+            <div style={{ width: 200 }} className="left-side-panel">
+              <AttrsTable key={this.oid} attrs={this.state.attrs} changeCanvas={this.changeCanvas} />
+            </div>
+
         </Row>
       </Container>
     );

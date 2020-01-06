@@ -1,5 +1,5 @@
 import React from 'react';
-import { fabric } from 'fabric';
+//import { fabric } from 'fabric';
 import { SketchPicker } from 'react-color';
 import { Row, Col, Container, Form, Input } from "reactstrap";
 import { TabPanel } from 'react-web-tabs';
@@ -145,6 +145,20 @@ class LeftPanel extends React.Component {
 
   addHeadingtxt = () => {
     var canvas = this.props.canvas;
+
+    let maxN = 0;
+    canvas.getObjects().forEach(elem => {
+      if (elem.type=="text"){
+        if (elem.name){
+          let m = elem.name.match(/noname (\d+)/);
+          if (m && m[1]){
+            let n = parseInt(m[1]);
+            maxN = n > maxN ? n : maxN;
+          }
+        }
+      }
+    });
+    maxN++;
     var text = new fabric.Textbox('Add Heading', {
       fontFamily: 'Open Sans',
       left: 100,
@@ -152,7 +166,10 @@ class LeftPanel extends React.Component {
       type: 'text',
       fontSize: 36,
       width: 250,
+      name: `noname ${maxN}`
     });
+
+    console.log(text.name);
     canvas.add(text);
     canvas.setActiveObject(text);
     selectObject(canvas);
