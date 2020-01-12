@@ -16,13 +16,30 @@ class DocController {
     async edit({request, response, view}) {
         let docId = request.params.id;
         let doc = await Doc.findOrFail(docId);
+        doc.data = JSON.parse(doc.data);
         return view.render('doc.edit', { doc: doc })
+    }    
+
+    async edit2({request, response, view}) {
+        let docId = request.params.id;
+        let doc = await Doc.findOrFail(docId);
+        return view.render('doc.edit2', { doc: doc })
     }    
 
     async save({request, response}) {
         let name = request.body.name;
         let doc = new Doc();
         doc.name = name;
+        await doc.save()
+        response.send(JSON.stringify({id: doc.id}));
+    }    
+
+    async save2({request, response}) {
+        let id = request.body.id;
+        let data = request.body.json;
+        data = JSON.stringify(data);
+        let doc = await Doc.findOrFail(id);
+        doc.data = data;
         await doc.save()
         response.send(JSON.stringify({id: doc.id}));
     }    

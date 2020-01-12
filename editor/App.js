@@ -33,8 +33,8 @@ class App extends Component {
       isSnap: false,
       isOverlap: false,
       isGrid: true,
-      canvaswidth: 1100,
-      canvasheight: 450,
+      canvaswidth: 850,
+      canvasheight: 1100,
       defaultbg: null, //require('./images/main-img.jpg'),
       fontBoldValue: 'normal',
       fontItalicValue: '',
@@ -53,6 +53,11 @@ class App extends Component {
   }
 
   updateCanvas = (canvas) => {
+    if (canvas) {
+      canvas.loadFromJSON(data);
+      canvas.renderAll();
+    }
+
     this.setState({
       canvas: canvas
     });
@@ -178,6 +183,30 @@ class App extends Component {
     this.download('/s2p', fileName, canvasData);
   }
 
+  save = () => {
+    let jsonCanvas = JSON.stringify(this.state.canvas);
+
+    var http = new XMLHttpRequest();
+    http.open("POST", 'save', true);
+    http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    http.setRequestHeader("Accept", "application/json");
+  
+    http.onreadystatechange = function() {//Call a function when the state changes.
+      if(http.readyState == 4 && http.status == 200) {
+        var res = JSON.parse(http.responseText);
+        console.log(res);
+        //$('#status').text(res.status+'|'+res.store);
+      }
+    }
+    var data = {
+      '_csrf': csrf,
+      'id': id,
+      'json': jsonCanvas
+    };
+    var params = JSON.stringify(data);
+    http.send(params);
+  }
+
   changeCanvas = (name, value) => {
     var canvas = this.state.canvas
 
@@ -190,6 +219,120 @@ class App extends Component {
     canvas.renderAll();
   }
 
+  arrange = () => {
+    let canvas = this.state.canvas;
+
+    let constraints = [];
+    let objects = {
+      'Page': {
+        left: 0,
+        top: 0,
+        width: 850,
+        height: 1100
+      }
+    };
+
+    canvas.forEachObject((o)=>{
+      constraints = constraints.concat(o.constraints.map((c)=>{
+        c.object = o.name;
+        return c;
+      }));
+      if (o.name) objects[o.name] = o;
+    });
+
+    let len1 = 1;
+    let len2 = 0;
+    do {
+      let leftObjs = constraints.reduce((hash, constraint)=>{
+        hash[`${constraint.object}.${constraint.myCorner}`] = true;
+        return hash;
+      }, {});
+
+      for (let constraint of constraints){
+        if (leftObjs[`${constraint.ref}.${constraint.corner}`]){
+          //depend on another constraint
+        }
+        else{
+          let me = objects[constraint.object];
+          let v;
+          if (constraint.corner == 'left' || constraint.corner == 'left'){
+            v = objects[constraint.ref][constraint.corner] + parseFloat(constraint.offset);
+          }
+          else if (constraint.corner == 'right'){
+            v = objects[constraint.ref]['left'] + objects[constraint.ref]['width'] + parseFloat(constraint.offset);
+          }
+          else if (constraint.corner == 'bottom'){
+            v = objects[constraint.ref]['top'] + objects[constraint.ref]['height'] + parseFloat(constraint.offset);
+          }
+
+          if (constraint.myCorner == 'left' || constraint.myCorner == 'left'){
+            me[constraint.myCorner] = v;
+          }
+          else if (constraint.myCorner == 'right'){
+            me['width'] = v - me['left'];
+          }
+          else if (constraint.myCorner == 'bottom'){
+            me['height'] = v - me['top'];
+          }
+          
+          console.log(`${constraint.myCorner} = ${v}`);
+          me.setCoords();
+    
+          constraint.done = true;
+        }
+      }
+      len1 = constraints.length;
+      constraints = constraints.filter((c)=>{
+        return !c.done;
+      });
+      len2 = constraints.length;
+    } while (len1>len2);
+
+    canvas.renderAll();
+    console.log(constraints);
+    console.log(objects);
+  }
+
+  addCanvasConstraint = (constraint) => {
+    var canvas = this.state.canvas
+
+    let object = canvas.getActiveObject();
+
+    if (!object) return;
+
+    let constraints = object.get('constraints');
+    
+    let i = constraints.findIndex(function(c){
+      return c.myCorner == constraint.myCorner;
+    })
+    //console.log(i);
+    if (i>=0) constraints[i] = constraint;
+    else constraints.push(constraint);
+    console.log(constraints);
+
+    constraints = object.set('constraints', constraints);
+    object.setCoords();
+    canvas.renderAll();
+
+  }
+
+  delCanvasConstraint = (idx) => {
+    var canvas = this.state.canvas
+
+    let object = canvas.getActiveObject();
+
+    if (!object) return;
+
+    let constraints = object.get('constraints');
+    
+    constraints.splice(idx, 1);
+    console.log(constraints);
+
+    constraints = object.set('constraints', constraints);
+    object.setCoords();
+    canvas.renderAll();
+
+  }
   setSnap = () => {
     this.setState({
       isSnap: !this.state.isSnap,
@@ -390,6 +533,12 @@ class App extends Component {
   }
 
   componentDidMount() {
+    console.log(data);
+    const canvas = this.state.canvas;
+    if (canvas) {
+//      canvas.loadFromJSON(data);
+//      canvas.renderAll();
+    }
     this.initKeyboardEvents();
   }
 
@@ -431,7 +580,7 @@ class App extends Component {
   }
 
   render() {
-    const sidebarWidth = 400;
+    const sidebarWidth = 200;
 
     let options = []
     for (let i = 1; i < 17; i ++) {
@@ -493,6 +642,9 @@ class App extends Component {
                   <li className="nav-item active download">
                     <span className="btn btn-fill" onClick={this.downloadAsPDF}>Export PDF</span>
                   </li>
+                  <li className="nav-item active download">
+                    <span className="btn btn-fill" onClick={this.save}>Save</span>
+                  </li>
                   <li className="nav-item">
                     <span className="nav-link btn-close" href="/"><img src={require('./images/close.jpg')} alt="" /></span>
                   </li>
@@ -544,8 +696,16 @@ class App extends Component {
           </div>
 
 
-            <div style={{ width: 200 }} className="left-side-panel">
-              <AttrsTable key={this.oid} attrs={this.state.attrs} changeCanvas={this.changeCanvas} />
+            <div style={{ width: 400 }} className="left-side-panel">
+              <AttrsTable 
+                key={this.oid} 
+                attrs={this.state.attrs} 
+                changeCanvas={this.changeCanvas} 
+                addCanvasConstraint={this.addCanvasConstraint} 
+                delCanvasConstraint={this.delCanvasConstraint} 
+                arrange={this.arrange} 
+                canvas={this.state.canvas} 
+              />
             </div>
 
         </Row>

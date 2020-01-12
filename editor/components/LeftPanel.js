@@ -150,7 +150,7 @@ class LeftPanel extends React.Component {
     canvas.getObjects().forEach(elem => {
       if (elem.type=="text"){
         if (elem.name){
-          let m = elem.name.match(/noname (\d+)/);
+          let m = elem.name.match(/noname_(\d+)/);
           if (m && m[1]){
             let n = parseInt(m[1]);
             maxN = n > maxN ? n : maxN;
@@ -166,7 +166,9 @@ class LeftPanel extends React.Component {
       type: 'text',
       fontSize: 36,
       width: 250,
-      name: `noname ${maxN}`
+      name: `noname_${maxN}`,
+      constraints: [],
+      
     });
 
     console.log(text.name);

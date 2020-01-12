@@ -15,6 +15,12 @@
   <script type="text/javascript" src="/js/editor_bundle.js"></script>
   <script type="text/javascript" >
     let csrf = '{{ csrfToken }}';
+    let id = {{ doc.id }};
+    let data = '{{ doc.data }}';
+    data = data.replace(/&quot;/g, '"');
+    data = JSON.parse(data);
+    console.log(data);
+    
   </script>
   <div id="app"></div>
 </body>
