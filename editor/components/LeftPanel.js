@@ -143,7 +143,7 @@ class LeftPanel extends React.Component {
     canvas.renderAll();
   }
 
-  addHeadingtxt = () => {
+  addText = () => {
     var canvas = this.props.canvas;
 
     let maxN = 0;
@@ -159,7 +159,7 @@ class LeftPanel extends React.Component {
       }
     });
     maxN++;
-    var text = new fabric.Textbox('Add Heading', {
+    var text = new fabric.Textbox('Text', {
       fontFamily: 'Open Sans',
       left: 100,
       top: 100,
@@ -178,39 +178,7 @@ class LeftPanel extends React.Component {
     canvas.renderAll();
   }
 
-  addSubheadingtxt = () => {
-    var canvas = this.props.canvas;
-    var text = new fabric.Textbox('Add Subheading', {
-      fontFamily: 'Open Sans',
-      left: 100,
-      top: 100,
-      type: 'text',
-      fontSize: 24,
-      width: 200,
-    });
-    canvas.add(text);
-    canvas.setActiveObject(text);
-    selectObject(canvas);
-    canvas.renderAll();
-  }
-
-  addText = () => {
-    var canvas = this.props.canvas;
-    var text = new fabric.Textbox('Add text', {
-      fontFamily: 'Open Sans',
-      left: 100,
-      top: 100,
-      type: 'text',
-      fontSize: 18,
-      width: 200,
-    });
-    canvas.add(text);
-    canvas.setActiveObject(text);
-    selectObject(canvas);
-    canvas.renderAll();
-  }
-
-  deleteCanvasBg = () => {
+    deleteCanvasBg = () => {
     var canvas = this.props.canvas;
     canvas.backgroundColor = '';
     canvas.renderAll();
@@ -616,22 +584,7 @@ class LeftPanel extends React.Component {
           <Container className="text-editer">
             <Row>
               <Col>
-                <p className="first-title text-center">Add some text to your artwork.</p>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <h1 className="big-title" onClick = {this.addHeadingtxt}>Add Heading</h1>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <h3 className="sub-title" onClick = {this.addSubheadingtxt}>Add Subheading</h3>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <h5 className="text" onClick = {this.addText}>Add text</h5>
+                <h1 className="big-title" onClick = {this.addText}>Text</h1>
               </Col>
             </Row>
           </Container>

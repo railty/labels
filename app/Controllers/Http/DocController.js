@@ -34,6 +34,14 @@ class DocController {
         response.send(JSON.stringify({id: doc.id}));
     }    
 
+    async delete({request, response}) {
+        let docId = request.params.id;
+        const doc = await Doc.find(docId)
+        await doc.delete()
+
+        response.route('DocController.index')
+    }    
+
     async save2({request, response}) {
         let id = request.body.id;
         let data = request.body.json;

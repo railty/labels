@@ -184,7 +184,9 @@ class App extends Component {
   }
 
   save = () => {
-    let jsonCanvas = JSON.stringify(this.state.canvas);
+    let jsonCanvas = this.state.canvas.toJSON(['name', 'constraints']);
+    
+    jsonCanvas = JSON.stringify(jsonCanvas);
 
     var http = new XMLHttpRequest();
     http.open("POST", 'save', true);

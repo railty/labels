@@ -5,7 +5,7 @@
   "description": "The fullstack application boilerplate for Adonisjs",
   "main": "index.js",
   "scripts": {
-    "start": ".\\node_modules\\.bin\\nodemon .\\server.js",
+    "start": "./node_modules/.bin/nodemon ./server.js",
     "test": "node ace test",
     "build-editor": "webpack --watch",
     "css-build": "node-sass --linefeed crlf --omit-source-map-url menu.scss public/css/menu.css"
