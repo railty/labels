@@ -136,8 +136,20 @@
 
 
 
+<textarea id="editor" class="textarea" rows="100">
+</textarea>
 
+<script type="text/javascript" >
+  let id = {{ doc.id }};
+  let data = '{{ doc.data }}';
+  data = data.replace(/&quot;/g, '"');
+  data = data.substring(1, data.length-1);
+  console.log(data);
+  data = JSON.parse(data);
+  data = JSON.stringify(data, null, 2);
+  
+  document.getElementById('editor').value = data;
+</script>
 
-  <h1>AAAAA</h1>
 </body>
 </html>

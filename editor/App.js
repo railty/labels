@@ -56,6 +56,9 @@ class App extends Component {
     if (canvas) {
       canvas.loadFromJSON(data);
       canvas.renderAll();
+
+      this.arrangeCanvas(canvas);
+
     }
 
     this.setState({
@@ -223,7 +226,10 @@ class App extends Component {
 
   arrange = () => {
     let canvas = this.state.canvas;
+    this.arrangeCanvas(canvas);
+  }
 
+  arrangeCanvas = (canvas) => {
     let constraints = [];
     let objects = {
       'Page': {
