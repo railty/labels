@@ -12,7 +12,9 @@ import Toolbar from './components/Toolbar';
 import AttrsTable from './components/AttrsTable';
 import LeftPanel from './components/LeftPanel';
 import { initCenteringGuidelines } from './components/Helpers'
+import FontPicker from 'font-picker-react';
 
+var FontFaceObserver = require('fontfaceobserver');
 //import { fabric } from 'fabric';
 
 import './App.scss';
@@ -54,10 +56,17 @@ class App extends Component {
 
   updateCanvas = (canvas) => {
     if (canvas) {
-      canvas.loadFromJSON(data);
-      canvas.renderAll();
 
-      this.arrangeCanvas(canvas);
+      WebFont.load({
+        google: {
+          families: ['Pacifico']
+        },
+        active: function() {
+          canvas.loadFromJSON(data);
+          canvas.renderAll();
+          this.arrangeCanvas(canvas);
+        }.bind(this),
+      });
 
     }
 
@@ -212,6 +221,21 @@ class App extends Component {
     http.send(params);
   }
 
+  refresh = () => {
+    let canvas = this.state.canvas;
+
+    let fontFamily = 'Pacifico';
+    var font = new FontFaceObserver();
+    console.log(`loading ${fontFamily} Font`);
+    font.load(null, 10000).then(function () {
+      console.log('Font is available');
+      canvas.renderAll();
+      console.log("refreshed");
+    }).catch(function(e) {
+      console.log("Font is not available");
+    });;
+  }
+
   changeCanvas = (name, value) => {
     var canvas = this.state.canvas
 
@@ -241,10 +265,13 @@ class App extends Component {
     };
 
     canvas.forEachObject((o)=>{
-      constraints = constraints.concat(o.constraints.map((c)=>{
-        c.object = o.name;
-        return c;
-      }));
+      if (o.constraints){
+        let cs = o.constraints.map((c)=>{
+          c.object = o.name;
+          return c;
+        });
+        constraints = constraints.concat(cs);
+      }
       if (o.name) objects[o.name] = o;
     });
 
@@ -653,6 +680,9 @@ class App extends Component {
                   <li className="nav-item active download">
                     <span className="btn btn-fill" onClick={this.save}>Save</span>
                   </li>
+                  <li className="nav-item active download">
+                    <span className="btn btn-fill" onClick={this.refresh}>Refresh</span>
+                  </li>
                   <li className="nav-item">
                     <span className="nav-link btn-close" href="/"><img src={require('./images/close.jpg')} alt="" /></span>
                   </li>
@@ -717,6 +747,14 @@ class App extends Component {
             </div>
 
         </Row>
+
+        <FontPicker
+                ref={c => this.pickerRef = c}
+                apiKey="AIzaSyCOyeDUsAnL-jnWudXBKNNma9cXmXsT4tM"
+                activeFontFamily={this.state.activeFontFamily}
+                limit="150"
+              />
+
       </Container>
     );
   }

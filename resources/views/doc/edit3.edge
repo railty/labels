@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <title>Editor 3</title>
+</head>
+<body>
+  <script type="text/javascript" src="/js/editor_bundle.js"></script>
+  <script type="text/javascript" >
+    let csrf = '{{ csrfToken }}';
+  </script>
+  <div id="testApp"></div>
+
+<script type="text/javascript" >
+  let id = {{ doc.id }};
+  let data = '{{ doc.data }}';
+  data = data.replace(/&quot;/g, '"');
+  data = data.substring(1, data.length-1);
+  console.log(data);
+  data = JSON.parse(data);
+  data = JSON.stringify(data, null, 2);
+</script>
+
+</body>
+</html>

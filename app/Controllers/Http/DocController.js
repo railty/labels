@@ -26,6 +26,12 @@ class DocController {
         return view.render('doc.edit2', { doc: doc })
     }    
 
+    async edit3({request, response, view}) {
+        let docId = request.params.id;
+        let doc = await Doc.findOrFail(docId);
+        return view.render('doc.edit3', { doc: doc })
+    }    
+
     async save({request, response}) {
         let name = request.body.name;
         let doc = new Doc();

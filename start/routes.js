@@ -26,6 +26,9 @@ Route.get('docs/:id/delete', 'DocController.delete')
 
 Route.get('docs/:id/edit', 'DocController.edit')
 Route.get('docs/:id/edit2', 'DocController.edit2')
+Route.get('docs/:id/edit3', 'DocController.edit3')
 Route.post('docs/:id/save', 'DocController.save2')
 
 Route.post('s2p', 'DocController.s2p')
+
+Route.get('code/:text', 'CodeController.create')

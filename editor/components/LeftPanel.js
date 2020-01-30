@@ -160,7 +160,7 @@ class LeftPanel extends React.Component {
     });
     maxN++;
     var text = new fabric.Textbox('Text', {
-      fontFamily: 'Open Sans',
+      fontFamily: 'Pacifico',
       left: 100,
       top: 100,
       type: 'text',
@@ -251,6 +251,7 @@ class LeftPanel extends React.Component {
   addSVG = (result) => {
     var canvas = this.props.canvas;
     var svg = result;
+    svg = "http://localhost:8000/code/123456?bcid=qrcode";
     fabric.loadSVGFromURL(svg, (objects) => {
     var loadedObject = fabric.util.groupSVGElements(objects);
       loadedObject.set({
