@@ -13,111 +13,22 @@
 </head>
 <body>
   <script type="text/javascript" src="/js/editor_bundle.js"></script>
-  <script type="text/javascript" >
-    let csrf = '{{ csrfToken }}';
-  </script>
   <link rel="stylesheet" type="text/css" href="/css/menu.css">
 
 <nav class="navbar" role="navigation" aria-label="main navigation">
-  <div class="navbar-brand">
-    <a class="navbar-item" href="https://bulma.io">
-      <img src="https://bulma.io/images/bulma-logo.png" width="112" height="28">
-    </a>
 
-    <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-    </a>
-  </div>
-
-  <div id="navbarBasicExample" class="navbar-menu">
     <div class="navbar-start">
       <a class="navbar-item">
         Home
       </a>
 
-      <a class="navbar-item">
-        Documentation
-      </a>
+      <button class="button" onclick="save()">
+        <span class="icon">
+          <i class="fas fa-lg fa-save"></i>
+        </span>
+      </button>
 
-      <div class="navbar-item has-dropdown is-hoverable">
-        <a class="navbar-link">
-          More
-        </a>
-
-        <div class="navbar-dropdown">
-          <div class="nested navbar-item dropdown">
-            <div class="dropdown-trigger">
-              <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
-      <span>Dropdown button</span>
-      <span class="icon is-small">
-        <i class="fas fa-angle-down" aria-hidden="true"></i>
-      </span>
-    </button>
-            </div>
-            <div class="dropdown-menu" id="dropdown-menu" role="menu">
-              <div class="dropdown-content">
-                <a href="#" class="dropdown-item">
-        Dropdown item
-      </a>
-                <a class="dropdown-item">
-        Other dropdown item
-      </a>
-                <a href="#" class="dropdown-item is-active">
-        Active dropdown item
-      </a>
-                <a href="#" class="dropdown-item">
-        Other dropdown item
-      </a>
-                <hr class="dropdown-divider">
-        <div class="nested dropdown dropdown-item">
-            <div class="dropdown-trigger">
-              <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
-      <span>Dropdown button</span>
-      <span class="icon is-small">
-        <i class="fas fa-angle-down" aria-hidden="true"></i>
-      </span>
-    </button>
-            </div>
-            <div class="dropdown-menu" id="dropdown-menu" role="menu">
-              <div class="dropdown-content">
-                <a href="#" class="dropdown-item">
-        Dropdown item
-      </a>
-                <a class="dropdown-item">
-        Other dropdown item
-      </a>
-                <a href="#" class="dropdown-item is-active">
-        Active dropdown item
-      </a>
-                <a href="#" class="dropdown-item">
-        Other dropdown item
-      </a>
-                <hr class="dropdown-divider">
-                <a href="#" class="dropdown-item">
-        With a divider
-      </a>
-              </div>
-            </div>
-          </div>
-              </div>
-            </div>
-          </div>
-          <a class="navbar-item">
-            Jobs
-          </a>
-          <a class="navbar-item">
-            Contact
-          </a>
-          <hr class="navbar-divider">
-          <a class="navbar-item">
-            Report an issue
-          </a>
-        </div>
-      </div>
     </div>
-
     <div class="navbar-end">
       <div class="navbar-item">
         <div class="buttons">
@@ -138,14 +49,37 @@
 
 <script type="text/javascript" >
   let id = {{ doc.id }};
-  let data = '{{ doc.data }}';
-  data = data.replace(/&quot;/g, '"');
-  data = data.substring(1, data.length-1);
-  console.log(data);
+  let csrf = '{{ csrfToken }}';
+  let data = {{{ doc.data }}};
   data = JSON.parse(data);
   data = JSON.stringify(data, null, 2);
   
   document.getElementById('editor').value = data;
+
+  function save(){
+    console.log("saving");
+
+    let json = document.getElementById('editor').value;
+    
+    let http = new XMLHttpRequest();
+    http.open("POST", 'save', true);
+    http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    http.setRequestHeader("Accept", "application/json");
+  
+    http.onreadystatechange = function() {//Call a function when the state changes.
+      if(http.readyState == 4 && http.status == 200) {
+        var res = JSON.parse(http.responseText);
+        console.log(res);
+        //$('#status').text(res.status+'|'+res.store);
+      }
+    }
+    let params = JSON.stringify({
+      '_csrf': csrf,
+      'id': id,
+      'json': json
+    });
+    http.send(params);
+  }
 </script>
 
 </body>

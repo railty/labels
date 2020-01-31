@@ -16,7 +16,7 @@ class DocController {
     async edit({request, response, view}) {
         let docId = request.params.id;
         let doc = await Doc.findOrFail(docId);
-        doc.data = JSON.parse(doc.data);
+        //doc.data = JSON.parse(doc.data);
         return view.render('doc.edit', { doc: doc })
     }    
 

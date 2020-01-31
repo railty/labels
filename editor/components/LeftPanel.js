@@ -160,7 +160,7 @@ class LeftPanel extends React.Component {
     });
     maxN++;
     var text = new fabric.Textbox('Text', {
-      fontFamily: 'Pacifico',
+      fontFamily: 'ABeeZee',
       left: 100,
       top: 100,
       type: 'text',
@@ -251,7 +251,11 @@ class LeftPanel extends React.Component {
   addSVG = (result) => {
     var canvas = this.props.canvas;
     var svg = result;
-    svg = "http://localhost:8000/code/123456?bcid=qrcode";
+
+    let text = "123456";
+    let bcid = "code128";
+
+    svg = `/code/${text}?bcid=${bcid}`;
     fabric.loadSVGFromURL(svg, (objects) => {
     var loadedObject = fabric.util.groupSVGElements(objects);
       loadedObject.set({
@@ -261,6 +265,12 @@ class LeftPanel extends React.Component {
         subTargetCheck: true
       });
       loadedObject.src = svg;
+
+      loadedObject.subType = "barcode";
+      loadedObject.text = text;
+      loadedObject.bcid = bcid;
+      loadedObject.src = `/code/${text}?bcid=${bcid}`;
+
       canvas.add(loadedObject);
       canvas.setActiveObject(loadedObject);
       loadedObject.scaleToWidth(150);
@@ -514,7 +524,13 @@ class LeftPanel extends React.Component {
 
   addImage = (result) => {
     var canvas = this.props.canvas;
-    fabric.Image.fromURL(result, (image) => {
+
+    let url = result;
+    let text = "1234567";
+    let bcid = "upca";
+    url = `/code/${text}.png?bcid=${bcid}&includetext=1&scale=16`;
+
+    fabric.Image.fromURL(url, (image) => {
       image.set({
           left: 100,
           top: 100,
@@ -523,6 +539,11 @@ class LeftPanel extends React.Component {
           scaleX: 1,
           scaleY: 1
       });
+
+      image.subType = "barcode";
+      image.text = text;
+      image.bcid = bcid;
+
       canvas.add(image);
       image.scaleToWidth(200);
       canvas.setActiveObject(image);

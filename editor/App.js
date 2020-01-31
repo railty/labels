@@ -35,8 +35,8 @@ class App extends Component {
       isSnap: false,
       isOverlap: false,
       isGrid: true,
-      canvaswidth: 850,
-      canvasheight: 1100,
+      canvaswidth: 1100,
+      canvasheight: 850,
       defaultbg: null, //require('./images/main-img.jpg'),
       fontBoldValue: 'normal',
       fontItalicValue: '',
@@ -59,7 +59,7 @@ class App extends Component {
 
       WebFont.load({
         google: {
-          families: ['Pacifico']
+          families: ['Pacifico', 'Roboto', 'ABeeZee']
         },
         active: function() {
           canvas.loadFromJSON(data);
@@ -196,7 +196,7 @@ class App extends Component {
   }
 
   save = () => {
-    let jsonCanvas = this.state.canvas.toJSON(['name', 'constraints']);
+    let jsonCanvas = this.state.canvas.toJSON(['name', 'constraints', 'subType', 'text', , 'bcid']);
     
     jsonCanvas = JSON.stringify(jsonCanvas);
 
@@ -224,7 +224,7 @@ class App extends Component {
   refresh = () => {
     let canvas = this.state.canvas;
 
-    let fontFamily = 'Pacifico';
+    let fontFamily = 'ABeeZee';
     var font = new FontFaceObserver();
     console.log(`loading ${fontFamily} Font`);
     font.load(null, 10000).then(function () {
@@ -242,8 +242,19 @@ class App extends Component {
     let object = canvas.getActiveObject();
 
     if (!object) return;
-
+    
     object.set(name, value);
+    if (object.type=="image" && object.subType=="barcode"){
+      if (name=="text" || name=="bcid"){
+        let text = object.text;
+        let bcid = object.bcid;
+        let url = `/code/${text}.png?bcid=${bcid}`;
+        object.setSrc(url, (obj)=>{
+          object.setCoords();
+          canvas.renderAll();
+        });
+      }
+    }
     object.setCoords();
     canvas.renderAll();
   }
@@ -259,8 +270,8 @@ class App extends Component {
       'Page': {
         left: 0,
         top: 0,
-        width: 850,
-        height: 1100
+        width: 1100,
+        height: 850
       }
     };
 
@@ -578,11 +589,13 @@ class App extends Component {
   }
 
   selectionUpdated = () => {
-    console.log("selection updated");
+    
 
     let canvas = this.state.canvas;
     let actObj = canvas.getActiveObject();
     if (actObj) {
+      console.log(`selection updated (${actObj.type})`);
+
       if (actObj.type == "text"){
         this.oid++;
         let attrs = [
@@ -607,6 +620,80 @@ class App extends Component {
 
         if (JSON.stringify(this.state.attrs) != JSON.stringify(attrs)) {
           this.setState({attrs: attrs});
+        }
+      }
+      else if (actObj.type == "path" || actObj.type == "group"){  //qrcode is path and barcode is group
+        if (actObj.subType == "barcode"){
+          this.oid++;
+          let attrs = [
+            {
+              name: "text", 
+              type: "keyin"
+            }, 
+            {
+              name: "bcid", 
+              type: "keyin"
+            }, 
+            {
+              name: "width", 
+              type: "keyin"
+            }, 
+            {
+              name: "height", 
+              type: "keyin"
+            }, 
+          ].map((attr)=>{
+            let v = actObj.get(attr.name);
+            attr["value"] = v;
+            return attr;
+          });
+  
+          if (JSON.stringify(this.state.attrs) != JSON.stringify(attrs)) {
+            this.setState({attrs: attrs});
+          }
+  
+        }
+      }
+      else if (actObj.type == "image"){
+        if (actObj.subType == "barcode"){
+          this.oid++;
+          let attrs = [
+            {
+              name: "text", 
+              type: "keyin"
+            }, 
+            {
+              name: "bcid", 
+              type: "keyin"
+            }, 
+            {
+              name: "src", 
+              type: "keyin"
+            }, 
+            {
+              name: "width", 
+              type: "keyin"
+            }, 
+            {
+              name: "height", 
+              type: "keyin"
+            }, 
+          ].map((attr)=>{
+            if (attr.name=="src"){
+              let v = actObj.getSrc();
+              attr["value"] = v;
+            }
+            else{
+              let v = actObj.get(attr.name);
+              attr["value"] = v;
+            }
+            return attr;
+          });
+  
+          if (JSON.stringify(this.state.attrs) != JSON.stringify(attrs)) {
+            this.setState({attrs: attrs});
+          }
+  
         }
       }
 

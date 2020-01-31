@@ -18,8 +18,7 @@
   <script type="text/javascript" >
     let csrf = '{{ csrfToken }}';
     let id = {{ doc.id }};
-    let data = '{{ doc.data }}';
-    data = data.replace(/&quot;/g, '"');
+    let data = {{{ doc.data }}};
     data = JSON.parse(data);
     console.log(data);
     

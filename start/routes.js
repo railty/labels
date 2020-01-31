@@ -31,4 +31,4 @@ Route.post('docs/:id/save', 'DocController.save2')
 
 Route.post('s2p', 'DocController.s2p')
 
-Route.get('code/:text', 'CodeController.create')
+Route.get('code/:text\.:format', 'CodeController.create')

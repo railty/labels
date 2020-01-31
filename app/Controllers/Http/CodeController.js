@@ -3,13 +3,19 @@ const Code = use('App/Models/Code');
 
 class CodeController {
     async create({request, response, view}) {
+        let format  = request.params.format;
         let options = request.qs;
         options.text  = request.params.text;
 
-        let svg = Code.create(options);
+        if (format == "svg"){
+            response.header('Content-type', 'image/svg+xml')
+        }
+        else if (format == "png"){
+            response.header('Content-type', 'image/png')
+        }
 
-        response.header('Content-type', 'image/svg+xml')
-        return view.render('code.create', { svg: svg })
+        let barcode = await Code.createSvg(options, format);
+        return response.send(barcode);
     }    
 }
 
